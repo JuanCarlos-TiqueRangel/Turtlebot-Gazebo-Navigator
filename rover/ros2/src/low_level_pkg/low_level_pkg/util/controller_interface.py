@@ -5,7 +5,7 @@ from rclpy.action import ActionClient
 
 # Import the required ROS interfaces
 from nav_msgs.msg import Path
-from nav2_msgs.action import # TODO
+from nav2_msgs.action import FollowPath
 from geometry_msgs.msg import PoseStamped
 
 # Import this to type the functions
@@ -18,6 +18,7 @@ from ament_index_python.packages import get_package_share_directory
 # Import the yaml package
 import yaml
 
+
 class ControllerInterface:
 
     def __init__(self, parent_node: Node):
@@ -27,7 +28,8 @@ class ControllerInterface:
         """
         self.node = parent_node
         self.logger = parent_node.get_logger()
-        self.controller_server_client = ActionClient(parent_node, # TODO )
+        self.controller_server_client = ActionClient(
+            parent_node, action_type=FollowPath)
 
     def call_action_client(self, frame_id: str, poses: List[PoseStamped], controller_id: str, goal_checker_id: str):
         """! Call the controller server action to follow a given path.
@@ -42,7 +44,7 @@ class ControllerInterface:
             self.logger.error("Controller server is not available!")
             return
 
-        action_goal = # TODO
+        action_goal = FollowPath.Goal()
 
         # Send the goal to the server
         future = self.controller_server_client.send_goal_async(action_goal)
@@ -52,7 +54,8 @@ class ControllerInterface:
 
         # Check if the goal was accepted
         if not future.result().accepted:
-            self.logger.error("The controller server goal was rejected by server!")
+            self.logger.error(
+                "The controller server goal was rejected by server!")
             return
 
         # Return the action result
@@ -74,7 +77,21 @@ def read_path() -> List[PoseStamped]:
     @return "str" name of the used goal checker.
     """
 
-    # TODO
+    with open("../tb_bringup/config/path.yaml") as f:
+        data = yaml.safe_load(f)
+        for pose_data in data['points']:
+            poses = PoseStamped()
+            try:
+                frame_id = pose_data['frame_id']
+                controller_id = pose_data['controller_id']
+                goal_checker_id = pose_data['goal_checker_id']
+            except KeyError:
+                frame_id = 'follow_paths'
+                controller_id = 'simple_controller'
+                goal_checker_id = 'follow_path_yaml'
+
+            poses.pose.position.x = pose_data['position']['x']
+            poses.pose.position.x = pose_data['position']['y']
 
     # Return the poses list
     return frame_id, poses, controller_id, goal_checker_id
@@ -82,7 +99,7 @@ def read_path() -> List[PoseStamped]:
 
 def test_controller_server(args=None):
     """Function to test the controller server interface."""
-    
+
     # Initialize rclpy
     rclpy.init(args=args)
 
@@ -94,7 +111,8 @@ def test_controller_server(args=None):
     frame_id, poses, controller_id, goal_checker_id = read_path()
 
     # Call the action client with the path
-    result = controller_server_interface.call_action_client(frame_id, poses, controller_id, goal_checker_id)
+    result = controller_server_interface.call_action_client(
+        frame_id, poses, controller_id, goal_checker_id)
 
     # Kill them all
     rclpy.shutdown()
