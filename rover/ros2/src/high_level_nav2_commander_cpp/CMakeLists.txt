@@ -11,6 +11,7 @@ find_package(rclcpp_action REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 
 set(DEPENDENCIES
   rclcpp
@@ -18,6 +19,7 @@ set(DEPENDENCIES
   std_msgs
   nav2_msgs
   yaml-cpp
+  ament_index_cpp
 )
 
 add_executable(high_level_commander_node src/high_level_commander_node.cpp)
